@@ -17,10 +17,29 @@ var uiController = (function () {
     getDOMstrings: function () {
       return DOMstrings;
     },
+    addListItem: function (item, type) {
+      // орлого зарлагын элементийг агуулсан html  ийг бэлтгэнэ.
+      var html, list;
+      if (type === "inc") {
+        list = ".income__list";
+        html =
+          '<div class="item clearfix" id="inc-%id%"><div class="item__description">$$DESCRIPTION$$</div><div class="right clearfix"><div class="item__value">$$VALUE$$</div><div class="item__delete"><button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button></div></div></div>';
+      } else {
+        list = ".expenses__list";
+        html =
+          '<div class="item clearfix" id="exp-%id%"><div class="item__description">$$DESCRIPTION$$</div>          <div class="right clearfix"><div class="item__value">$$VALUE$$</div><div class="item__percentage">21%</div><div class="item__delete"><button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button></div></div></div>';
+      }
+      // Тэр html дотроо орлого зарлагын утгуудыг replace ашиглаж өөрчөлж өгнө
+      html = html.replace("%id%", item.id);
+      html = html.replace("$$DESCRIPTION$$", item.description);
+      html = html.replace("$$VALUE$$", item.value);
+      // Бэлтгэсэн html ээ DOM руу хийж өгнө.
+      document.querySelector(list).insertAdjacentHTML("beforeend", html);
+    },
   };
 })();
 
-// Санхүүтэй ажиллах крнтроллер
+// Санхүүтэй ажиллах кoнтроллер
 var financController = (function () {
   var Income = function (id, description, value) {
     this.id = id;
@@ -33,7 +52,7 @@ var financController = (function () {
     this.value = value;
   };
   var data = {
-    allItems: {
+    Items: {
       inc: [],
       exp: [],
     },
@@ -42,15 +61,42 @@ var financController = (function () {
       exp: 0,
     },
   };
+  return {
+    addItem: function (type, desc, val) {
+      var item, id;
+      if (data.Items[type].length === 0) {
+        id = 1;
+      } else {
+        id = data.Items[type][data.Items[type].length - 1].id + 1;
+      }
+      if (type === "inc") {
+        item = new Income(id, desc, val);
+      } else {
+        item = new Expense(id, desc, val);
+      }
+      data.Items[type].push(item);
+      return item;
+    },
+    seedata: function () {
+      return data;
+    },
+  };
 })();
 
 // Прогамын холбогч контроллер
 var appController = (function (uiController, financController) {
   var ctrlAddItem = function () {
     // 1. оруулах өгөгдлийг дэлгэцээс олж авна.
-    console.log(uiController.getInput());
+    var input = uiController.getInput();
+
     // 2. олж авсан өгөгдлүүдээ санхүүгийн контроллерт дамжуулж тэнд хадгална.
+    var item = financController.addItem(
+      input.type,
+      input.description,
+      input.value
+    );
     // 3. олж авсан өгөндлүүдээ вэб дээрээ тохирох хэсэгт нь гаргана.
+    uiController.addListItem(item, input.type);
     // 4. төсвийг тооцоолно
     // 5. эцсийн үлдэгдэл тооцоог дэлгэцэнд гаргана.
   };
@@ -62,7 +108,7 @@ var appController = (function (uiController, financController) {
     });
 
     document.addEventListener("keypress", function (event) {
-      if (event.keyCode === 13) {
+      if (event.keyCode === 13 || event.which === 13) {
         ctrlAddItem();
       }
     });
